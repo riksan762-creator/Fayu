@@ -1,0 +1,20 @@
+:root { --accent: #0ea5e9; }
+body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; margin: 0; }
+.glass-container { padding: 20px; max-width: 1200px; margin: auto; }
+.glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 20px;
+}
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.card { transition: 0.3s; }
+.card:hover { border-color: var(--accent); transform: translateY(-5px); }
+.tag { font-size: 10px; color: var(--accent); font-weight: bold; }
+input { 
+    width: 100%; padding: 15px; border-radius: 15px; background: rgba(255,255,255,0.05); 
+    border: 1px solid rgba(255,255,255,0.1); color: white; margin-bottom: 20px;
+}
+.btn-primary { background: var(--accent); border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; color: #000; font-weight: bold; }
