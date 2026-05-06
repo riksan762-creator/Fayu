@@ -14,19 +14,18 @@ export default async function handler(req, res) {
 
     const result = await response.json();
 
-    // Debugging: Jika status false, kirim pesan error aslinya ke frontend
-    if (result.status) {
-      // Tambah margin profit Rp 500
+    // Cek apakah result.data benar-benar ada sebelum diproses
+    if (result.status && Array.isArray(result.data)) {
       const dataWithProfit = result.data.map(item => ({
         ...item,
-        price: parseInt(item.price) + 500
+        price: parseInt(item.price || 0) + 500
       }));
-      res.status(200).json({ status: true, data: dataWithProfit });
+      return res.status(200).json({ status: true, data: dataWithProfit });
     } else {
-      // Jika API menolak, kita akan tahu alasannya di sini
-      res.status(400).json({ status: false, message: result.data || "API Reject" });
+      // Kirim error dari pusat agar tidak crash
+      return res.status(200).json({ status: false, message: result.data || "Data produk kosong" });
     }
   } catch (error) {
-    res.status(500).json({ status: false, message: "Koneksi ke Fayu Gagal" });
+    return res.status(500).json({ status: false, message: "Server Crash: " + error.message });
   }
 }
