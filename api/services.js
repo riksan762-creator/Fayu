@@ -11,36 +11,27 @@ export default async function handler(req, res) {
 
     const result = await response.json();
     
-    // LOGIKA DETEKSI OTOMATIS:
-    // Kita cari dimana letak array produknya (apakah di result, result.data, atau result.message)
-    let rawProducts = [];
-    if (Array.isArray(result)) {
-        rawProducts = result;
-    } else if (result.data && Array.isArray(result.data)) {
-        rawProducts = result.data;
-    } else if (result.message && Array.isArray(result.message)) {
-        rawProducts = result.message;
-    }
+    // CEK APAKAH ADA ARRAY DI DALAM RESPON
+    let rawProducts = result.data || result.message || (Array.isArray(result) ? result : null);
 
-    if (rawProducts.length > 0) {
-      const formatted = rawProducts.slice(0, 500).map(item => ({
-        id: item.id || item.service_id || "0",
-        category: item.category || "General",
-        service: item.service || item.name || "Layanan Tanpa Nama",
-        // Ambil harga (price/rate) dan tambah untung Rp 500
+    if (rawProducts && Array.isArray(rawProducts)) {
+      const formatted = rawProducts.slice(0, 300).map(item => ({
+        id: item.id || item.service_id,
+        category: item.category || "Layanan",
+        service: item.service || item.name,
         price: (parseInt(item.price || item.rate || 0)) + 500
       }));
-      
       return res.status(200).json({ status: true, data: formatted });
     } else {
-      // Jika masih gagal, kita kirim isi asli dari pusat ke log untuk dipelajari
-      console.log("Respon asli pusat:", JSON.stringify(result));
+      // JIKA GAGAL, KIRIM PESAN ASLI DARI PUSAT KE FRONTEND
+      // Ini akan membantu kita melihat apakah pesannya "API Key Salah" atau "Saldo Tidak Cukup"
+      const errorMsg = typeof result.data === 'string' ? result.data : JSON.stringify(result);
       return res.status(200).json({ 
         status: false, 
-        message: "Format data pusat berubah. Cek Log Vercel untuk detail." 
+        message: "Respon Pusat: " + errorMsg 
       });
     }
   } catch (error) {
-    return res.status(200).json({ status: false, message: "Kesalahan sistem: " + error.message });
+    return res.status(200).json({ status: false, message: "Crash: " + error.message });
   }
 }
