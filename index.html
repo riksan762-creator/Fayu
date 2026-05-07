@@ -3,29 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SawargiPay - CTO Dashboard</title>
+    <title>SawargiPay - Digital Payment Solution</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="glass-container">
-        <header class="glass-card">
-            <div class="brand">SAWARGIPAY</div>
-            <div class="balance-info">
+    <div class="glow-bg"></div>
+    
+    <nav>
+        <div class="container nav-wrapper">
+            <h1 class="logo">Sawargi<span>Pay</span></h1>
+            <div class="balance-card">
                 <small>Saldo Server</small>
-                <h2 id="balance-text">Rp 0</h2>
+                <h3 id="balance-text">Rp 0</h3>
             </div>
-            <button class="btn-primary" onclick="location.reload()">Refresh Data</button>
-        </header>
+        </div>
+    </nav>
 
-        <main>
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Cari layanan SMM..." onkeyup="search()">
+    <main class="container">
+        <section class="hero">
+            <h2>Layanan SMM & PPOB Terlengkap</h2>
+            <p>Transaksi instan, harga agen, kualitas bintang lima.</p>
+            
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Cari layanan (Instagram, YouTube, dll)..." onkeyup="search()">
+                <button class="btn-search">Cari</button>
             </div>
-            <div id="product-grid" class="grid">
-                <!-- Produk Otomatis -->
+        </section>
+
+        <div id="product-grid" class="product-grid">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Menghubungkan ke server pusat...</p>
             </div>
-        </main>
-    </div>
+        </div>
+    </main>
 
     <script src="script.js"></script>
 </body>
