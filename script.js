@@ -1,75 +1,180 @@
 let allServices = [];
 
-// Fungsi Muat Data
+// FORMAT HARGA
+function formatPrice(price) {
+    return Number(price || 0).toLocaleString("id-ID");
+}
+
+// LOAD DATA
 async function initApp() {
-    const grid = document.getElementById('product-grid');
-    grid.innerHTML = '<div class="loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Menyiapkan Layanan Terbaik...</div>';
+
+    const grid =
+        document.getElementById("product-grid");
+
+    grid.innerHTML = `
+        <div class="loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Loading Services...</span>
+        </div>
+    `;
 
     try {
-        // Panggil API Backend Anda
-        const response = await fetch(`/api/services?t=${Date.now()}`);
-        const result = await response.json();
 
-        if (result.status && result.data) {
-            allServices = result.data;
-            renderProducts(allServices);
-        } else {
-            grid.innerHTML = `<p style="text-align:center; grid-column:1/-1;">⚠️ ${result.message}</p>`;
+        const response =
+            await fetch(`/api/services?t=${Date.now()}`);
+
+        const result =
+            await response.json();
+
+        console.log(result);
+
+        // AMBIL ARRAY YANG BENAR
+        let services =
+            result.data || result.services || [];
+
+        if (!Array.isArray(services)) {
+            services = [];
         }
-    } catch (error) {
-        grid.innerHTML = '<p style="text-align:center; grid-column:1/-1;">❌ Gagal terhubung ke server.</p>';
+
+        // SORT CATEGORY + NAME
+        services.sort((a, b) => {
+
+            const catA =
+                (a.category || "").toLowerCase();
+
+            const catB =
+                (b.category || "").toLowerCase();
+
+            if (catA < catB) return -1;
+            if (catA > catB) return 1;
+
+            return (a.name || "")
+                .localeCompare(b.name || "");
+        });
+
+        allServices = services;
+
+        renderProducts(allServices);
+
+    } catch (err) {
+
+        console.error(err);
+
+        grid.innerHTML = `
+            <div class="error-box">
+                Gagal mengambil layanan
+            </div>
+        `;
     }
 }
 
-// Fungsi Render Kartu
+// RENDER PRODUK
 function renderProducts(data) {
-    const grid = document.getElementById('product-grid');
-    
-    if (data.length === 0) {
-        grid.innerHTML = '<p style="text-align:center; grid-column:1/-1;">Produk tidak ditemukan.</p>';
+
+    const grid =
+        document.getElementById("product-grid");
+
+    if (!data.length) {
+
+        grid.innerHTML = `
+            <div class="error-box">
+                Produk tidak ditemukan
+            </div>
+        `;
+
         return;
     }
 
-    grid.innerHTML = data.map(item => `
-        <div class="product-card">
-            <div>
-                <div class="cat-badge">${item.category}</div>
-                <h3>${item.name}</h3>
+    grid.innerHTML = data.map(item => {
+
+        return `
+            <div class="product-card">
+
+                <div class="card-header">
+
+                    <span class="category">
+                        ${item.category || "General"}
+                    </span>
+
+                    <h3>
+                        ${item.name || "No Name"}
+                    </h3>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="info-grid">
+
+                        <div class="info-item">
+                            <small>Min</small>
+                            <strong>${formatPrice(item.min)}</strong>
+                        </div>
+
+                        <div class="info-item">
+                            <small>Max</small>
+                            <strong>${formatPrice(item.max)}</strong>
+                        </div>
+
+                    </div>
+
+                    <div class="price">
+                        Rp ${formatPrice(item.price)}
+                    </div>
+
+                    <input
+                        type="text"
+                        class="input"
+                        placeholder="Username / Link"
+                    >
+
+                    <input
+                        type="number"
+                        class="input"
+                        placeholder="Jumlah Pesanan"
+                        min="${item.min || 0}"
+                        max="${item.max || 999999}"
+                    >
+
+                    <button class="btn-order">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        Order Sekarang
+                    </button>
+
+                </div>
+
             </div>
-            <div>
-                <div class="product-price">Rp ${item.price.toLocaleString('id-ID')}</div>
-                <button class="btn-buy" onclick="handleOrder('${item.id}', '${item.name}', ${item.price})">
-                    <i class="fa-solid fa-cart-shopping"></i> Beli Sekarang
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+
+    }).join("");
 }
 
-// Fungsi Order WhatsApp
-function handleOrder(id, name, price) {
-    const adminWA = "628123456789"; // GANTI DENGAN NOMOR WA ANDA
-    const text = `Halo Admin SawargiPay,\n\nSaya ingin memesan layanan berikut:\n` +
-                 `━━━━━━━━━━━━━━━━━━\n` +
-                 `📦 *Layanan:* ${name}\n` +
-                 `🆔 *ID Produk:* ${id}\n` +
-                 `💵 *Harga:* Rp ${price.toLocaleString('id-ID')}\n` +
-                 `━━━━━━━━━━━━━━━━━━\n\n` +
-                 `Mohon instruksi selanjutnya untuk pembayaran.`;
-    
-    const url = `https://wa.me/${adminWA}?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-}
-
-// Fungsi Pencarian
+// SEARCH
 function searchService() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = allServices.filter(s => 
-        s.name.toLowerCase().includes(query) || 
-        s.category.toLowerCase().includes(query)
-    );
+
+    const query =
+        document.getElementById("searchInput")
+        .value
+        .toLowerCase();
+
+    const filtered =
+        allServices.filter(item => {
+
+            return (
+                (item.name || "")
+                .toLowerCase()
+                .includes(query)
+
+                ||
+
+                (item.category || "")
+                .toLowerCase()
+                .includes(query)
+            );
+        });
+
     renderProducts(filtered);
 }
 
-// Jalankan saat halaman dibuka
+// START
 window.onload = initApp;
