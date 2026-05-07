@@ -1,35 +1,31 @@
 export default async function handler(req, res) {
-  const apiId = process.env.FAYU_API_ID;
-  const apiKey = process.env.FAYU_API_KEY;
-
-  if (!apiId || !apiKey) {
-    return res.status(200).json({ status: false, message: "API ID/Key belum diset di Vercel Settings" });
-  }
-
   try {
     const response = await fetch("https://fayupedia.id/api/services", {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ 'api_id': apiId, 'api_key': apiKey })
+      body: new URLSearchParams({
+        'api_id': process.env.FAYU_API_ID,
+        'api_key': process.env.FAYU_API_KEY
+      })
     });
 
     const result = await response.json();
 
-    if (result.status && Array.isArray(result.data)) {
-      // Ambil 100 produk teratas dulu saja untuk tes awal agar ringan
-      const limitedData = result.data.slice(0, 200).map(item => ({
-        id: item.id,
-        category: item.category,
-        service: item.service,
-        price: (parseInt(item.price) || 0) + 500, // Keuntungan SawargiPay
-        status: item.status
+    // Jika result.data bukan array, kita bungkus biar tidak error
+    const rawData = Array.isArray(result.data) ? result.data : [];
+    
+    if (rawData.length > 0) {
+      const formatted = rawData.slice(0, 300).map(item => ({
+        id: item.id || item.service_id,
+        category: item.category || "Layanan",
+        service: item.service || item.name,
+        price: (parseInt(item.price || item.rate) || 0) + 500
       }));
-      
-      return res.status(200).json({ status: true, data: limitedData });
-    } else {
-      return res.status(200).json({ status: false, message: result.data || "Data tidak valid" });
+      return res.status(200).json({ status: true, data: formatted });
     }
-  } catch (error) {
-    return res.status(200).json({ status: false, message: "Gangguan Server Pusat: " + error.message });
+    
+    return res.status(200).json({ status: false, message: "Pusat belum mengirim data" });
+  } catch (e) {
+    return res.status(200).json({ status: false, message: "Gagal Parsing Data" });
   }
 }
