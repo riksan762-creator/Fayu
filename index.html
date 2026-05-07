@@ -3,40 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SawargiPay - Digital Payment Solution</title>
+    <title>SawargiPay - Digital Marketplace Professional</title>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="glow-bg"></div>
-    
-    <nav>
-        <div class="container nav-wrapper">
-            <h1 class="logo">Sawargi<span>Pay</span></h1>
-            <div class="balance-card">
-                <small>Saldo Server</small>
-                <h3 id="balance-text">Rp 0</h3>
+    <div class="glow-overlay"></div>
+
+    <header>
+        <div class="container nav-container">
+            <div class="logo">Sawargi<span>Pay</span></div>
+            <div class="balance-box">
+                <i class="fa-solid fa-wallet"></i>
+                <span id="balance-text">Rp 0</span>
             </div>
         </div>
-    </nav>
+    </header>
 
     <main class="container">
         <section class="hero">
-            <h2>Layanan SMM & PPOB Terlengkap</h2>
-            <p>Transaksi instan, harga agen, kualitas bintang lima.</p>
-            
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Cari layanan (Instagram, YouTube, dll)..." onkeyup="search()">
-                <button class="btn-search">Cari</button>
-            </div>
+            <h1>Layanan Sosial Media <span>Terbaik</span></h1>
+            <p>Tingkatkan engagement akun Anda dengan layanan profesional, instan, dan bergaransi.</p>
         </section>
 
-        <div id="product-grid" class="product-grid">
-            <div class="loading-state">
-                <div class="spinner"></div>
-                <p>Menghubungkan ke server pusat...</p>
+        <div class="search-wrapper">
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Cari layanan (Contoh: Instagram, TikTok)..." onkeyup="search()">
             </div>
         </div>
+
+        <div id="product-grid" class="product-grid">
+            </div>
     </main>
 
     <script src="script.js"></script>
