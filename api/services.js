@@ -2,41 +2,34 @@ export default async function handler(req, res) {
   const apiId = process.env.FAYU_API_ID;
   const apiKey = process.env.FAYU_API_KEY;
 
-  try {
-    // Memberikan batas waktu tunggu agar tidak timeout di Vercel
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+  if (!apiId || !apiKey) {
+    return res.status(200).json({ status: false, message: "API ID/Key belum diset di Vercel Settings" });
+  }
 
+  try {
     const response = await fetch("https://fayupedia.id/api/services", {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        'api_id': apiId,
-        'api_key': apiKey
-      }),
-      signal: controller.signal
+      body: new URLSearchParams({ 'api_id': apiId, 'api_key': apiKey })
     });
 
-    clearTimeout(timeoutId);
     const result = await response.json();
 
-    // Pastikan data yang diterima adalah Array sebelum diproses
-    if (result && result.data && Array.isArray(result.data)) {
-      const dataWithProfit = result.data.map(item => ({
+    if (result.status && Array.isArray(result.data)) {
+      // Ambil 100 produk teratas dulu saja untuk tes awal agar ringan
+      const limitedData = result.data.slice(0, 200).map(item => ({
         id: item.id,
         category: item.category,
         service: item.service,
-        // Menambahkan margin 500 dan memastikan harga adalah angka
-        price: (parseInt(item.price) || 0) + 500,
+        price: (parseInt(item.price) || 0) + 500, // Keuntungan SawargiPay
         status: item.status
       }));
       
-      return res.status(200).json({ status: true, data: dataWithProfit });
+      return res.status(200).json({ status: true, data: limitedData });
     } else {
-      return res.status(200).json({ status: false, message: "Pusat mengirim data kosong" });
+      return res.status(200).json({ status: false, message: result.data || "Data tidak valid" });
     }
   } catch (error) {
-    console.error("Log Error CTO:", error.message);
-    return res.status(200).json({ status: false, message: "Gagal memproses ribuan data produk" });
+    return res.status(200).json({ status: false, message: "Gangguan Server Pusat: " + error.message });
   }
 }
