@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SawargiPay - Panel Sosial Media Profesional</title>
-    <!-- Font & Ikon Modern -->
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Background Gradient Efek -->
+
     <div class="bg-glow"></div>
 
+    <!-- HEADER -->
     <header>
         <div class="container nav-wrapper">
             <div class="logo">Sawargi<span>Pay</span></div>
@@ -26,24 +26,36 @@
     </header>
 
     <main class="container">
-        <!-- Hero Section -->
+
+        <!-- HERO -->
         <section class="hero-section">
             <h1>Layanan Sosial Media <span>Terbaik</span></h1>
             <p>Tingkatkan kehadiran digital Anda dengan layanan instan, bergaransi, dan termurah.</p>
         </section>
 
-        <!-- Search & Filter -->
+        <!-- SEARCH -->
         <div class="search-container">
             <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" placeholder="Cari layanan (Contoh: Instagram, TikTok, YouTube)..." onkeyup="searchService()">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Cari layanan (Contoh: Instagram, TikTok, YouTube)..."
+                    onkeyup="searchService()"
+                    autocomplete="off"
+                >
             </div>
         </div>
 
-        <!-- Product Grid - Lokasi Utama Produk -->
-        <div id="product-grid" class="product-grid">
-            <!-- Produk akan dimuat secara otomatis oleh script.js -->
-        </div>
+        <!-- CATEGORY TABS -->
+        <div id="category-tabs"></div>
+
+        <!-- RESULT COUNTER -->
+        <span id="result-count"></span>
+
+        <!-- PRODUCT GRID -->
+        <div id="product-grid" class="product-grid"></div>
+
     </main>
 
     <footer>
