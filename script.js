@@ -1,54 +1,65 @@
-let allServices = [];
+let servicesCache = [];
 
-async function loadDashboard() {
+async function initSawargiPay() {
     const grid = document.getElementById('product-grid');
-    const balanceText = document.getElementById('balance-text');
+    
+    // Tampilkan Skeleton (Loading Animasi) agar profesional
+    grid.innerHTML = Array(6).fill('<div class="loading-card"></div>').join('');
 
-    // Ambil Saldo
+    // 1. Ambil Saldo
     fetch(`/api/balance?t=${Date.now()}`)
-        .then(res => res.json())
+        .then(r => r.json())
         .then(d => {
-            balanceText.innerText = d.status ? `Rp ${parseInt(d.balance).toLocaleString('id-ID')}` : "Rp 0";
-        }).catch(() => balanceText.innerText = "Offline");
+            if(d.status) document.getElementById('balance-text').innerText = `Rp ${parseInt(d.balance).toLocaleString('id-ID')}`;
+        });
 
-    // Ambil Produk
+    // 2. Ambil Produk
     try {
         const res = await fetch(`/api/services?t=${Date.now()}`);
         const result = await res.json();
 
-        if (result.status && result.data) {
-            allServices = result.data;
-            render(allServices);
+        if (result.status) {
+            servicesCache = result.data;
+            render(servicesCache);
         } else {
-            grid.innerHTML = `<div class="loading-state"><p>⚠️ ${result.message}</p></div>`;
+            grid.innerHTML = `<p style="text-align:center;grid-column:1/-1">⚠️ ${result.message}</p>`;
         }
-    } catch (e) {
-        grid.innerHTML = `<div class="loading-state"><p>❌ Gagal memuat data dari API</p></div>`;
+    } catch {
+        grid.innerHTML = `<p style="text-align:center;grid-column:1/-1">❌ Error koneksi API.</p>`;
     }
 }
 
 function render(data) {
     const grid = document.getElementById('product-grid');
-    if(data.length === 0) return;
+    if (data.length === 0) {
+        grid.innerHTML = '<p style="text-align:center;grid-column:1/-1">Produk tidak ditemukan...</p>';
+        return;
+    }
 
     grid.innerHTML = data.map(item => `
         <div class="card">
-            <div>
-                <span class="tag">${item.category}</span>
-                <h4>${item.service}</h4>
-            </div>
-            <div class="price-row">
-                <p class="price">Rp ${item.price.toLocaleString('id-ID')}</p>
-                <button class="btn-buy" onclick="alert('Layanan siap dipesan!')">Beli</button>
-            </div>
+            <span class="tag">${item.category}</span>
+            <h4>${item.name}</h4>
+            <p class="price-tag">Rp ${item.price.toLocaleString('id-ID')}</p>
+            <button class="btn-buy" onclick="checkout('${item.id}', '${item.name}')">
+                <i class="fa-solid fa-cart-shopping"></i> Beli Sekarang
+            </button>
         </div>
     `).join('');
 }
 
 function search() {
-    const input = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = allServices.filter(s => s.service.toLowerCase().includes(input));
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = servicesCache.filter(s => 
+        s.name.toLowerCase().includes(query) || 
+        s.category.toLowerCase().includes(query)
+    );
     render(filtered);
 }
 
-window.onload = loadDashboard;
+function checkout(id, name) {
+    const msg = `Halo SawargiPay, saya ingin memesan:\nLayanan: ${name}\nID: ${id}\n\nMohon diproses, terima kasih.`;
+    window.location.href = `https://wa.me/628XXXXXXXXXX?text=${encodeURIComponent(msg)}`;
+}
+
+window.onload = initSawargiPay;
