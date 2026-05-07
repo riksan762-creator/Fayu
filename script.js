@@ -1,46 +1,54 @@
 let allServices = [];
 
 async function loadDashboard() {
-    const balanceText = document.getElementById('balance-text');
     const grid = document.getElementById('product-grid');
+    const balanceText = document.getElementById('balance-text');
 
-    // 1. Ambil Saldo
-    try {
-        const res = await fetch('/api/balance');
-        const d = await res.json();
-        balanceText.innerText = d.status ? `Rp ${parseInt(d.balance).toLocaleString('id-ID')}` : "Rp 0";
-    } catch { balanceText.innerText = "Error"; }
+    // Ambil Saldo
+    fetch(`/api/balance?t=${Date.now()}`)
+        .then(res => res.json())
+        .then(d => {
+            balanceText.innerText = d.status ? `Rp ${parseInt(d.balance).toLocaleString('id-ID')}` : "Rp 0";
+        }).catch(() => balanceText.innerText = "Offline");
 
-    // 2. Ambil Produk
+    // Ambil Produk
     try {
-        const res = await fetch('/api/services');
+        const res = await fetch(`/api/services?t=${Date.now()}`);
         const result = await res.json();
-        if(result.status && result.data) {
+
+        if (result.status && result.data) {
             allServices = result.data;
             render(allServices);
         } else {
-            grid.innerHTML = `<p style="color:white; text-align:center;">${result.message || "Data belum tersedia"}</p>`;
+            grid.innerHTML = `<div class="loading-state"><p>⚠️ ${result.message}</p></div>`;
         }
-    } catch { grid.innerHTML = "Gagal koneksi backend"; }
+    } catch (e) {
+        grid.innerHTML = `<div class="loading-state"><p>❌ Gagal memuat data dari API</p></div>`;
+    }
 }
 
 function render(data) {
     const grid = document.getElementById('product-grid');
+    if(data.length === 0) return;
+
     grid.innerHTML = data.map(item => `
-        <div class="glass-card card">
-            <span class="tag">${item.category}</span>
-            <h4 style="margin:10px 0; font-size:14px;">${item.service}</h4>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <b style="color:#0ea5e9;">Rp ${item.price.toLocaleString('id-ID')}</b>
-                <button class="btn-buy" style="padding:4px 10px; cursor:pointer;">Beli</button>
+        <div class="card">
+            <div>
+                <span class="tag">${item.category}</span>
+                <h4>${item.service}</h4>
+            </div>
+            <div class="price-row">
+                <p class="price">Rp ${item.price.toLocaleString('id-ID')}</p>
+                <button class="btn-buy" onclick="alert('Layanan siap dipesan!')">Beli</button>
             </div>
         </div>
     `).join('');
 }
 
 function search() {
-    const val = document.getElementById('searchInput').value.toLowerCase();
-    render(allServices.filter(s => s.service.toLowerCase().includes(val)));
+    const input = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = allServices.filter(s => s.service.toLowerCase().includes(input));
+    render(filtered);
 }
 
 window.onload = loadDashboard;
