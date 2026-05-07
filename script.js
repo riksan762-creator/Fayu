@@ -1,83 +1,97 @@
-// Variable global untuk menyimpan data agar pencarian (search) lancar
+// Global variable untuk pencarian
 let allServices = [];
 
+// Fungsi Utama Load Data
 async function loadDashboard() {
+    console.log("Memulai sinkronisasi SawargiPay...");
     const grid = document.getElementById('product-grid');
     const balanceText = document.getElementById('balance-text');
 
+    // 1. Ambil Saldo
     try {
-        // 1. Ambil Saldo Server secara paralel
-        fetch('/api/balance')
-            .then(res => res.json())
-            .then(data => {
-                if(data.status && data.data) {
-                    balanceText.innerText = `Rp ${data.data.balance.toLocaleString('id-ID')}`;
-                } else {
-                    balanceText.innerText = "Error API";
-                }
-            })
-            .catch(() => balanceText.innerText = "Koneksi Gagal");
-
-        // 2. Ambil Daftar Layanan SMM
-        grid.innerHTML = '<p class="loading">Sedang menyinkronkan data pusat...</p>';
+        const resBal = await fetch('/api/balance');
+        const dataBal = await resBal.json();
         
-        const response = await fetch('/api/services');
-        const result = await response.json();
-
-        if (result.status && result.data) {
-            allServices = result.data;
-            render(allServices); // Tampilkan produk
+        if (dataBal.status && dataBal.data) {
+            balanceText.innerText = `Rp ${parseInt(dataBal.data.balance).toLocaleString('id-ID')}`;
+            console.log("Saldo berhasil dimuat.");
         } else {
-            // Menampilkan pesan error spesifik dari backend jika ada (misal: IP Blocked)
-            grid.innerHTML = `
-                <div class="glass-card error-box">
-                    <p>❌ Produk Tidak Muncul</p>
-                    <small>${result.message || "Pastikan Whitelist IP di Dashboard Pusat sudah dikosongkan."}</small>
-                </div>`;
+            balanceText.innerText = "Gagal Load";
+            console.error("API Saldo Error:", dataBal.message);
         }
-    } catch (error) {
-        grid.innerHTML = '<p class="error-box">Gagal terhubung ke server backend Vercel.</p>';
+    } catch (err) {
+        balanceText.innerText = "Koneksi Error";
+        console.error("Fetch Saldo Gagal:", err);
+    }
+
+    // 2. Ambil Layanan SMM
+    grid.innerHTML = '<div class="loading">Sedang mengambil ribuan produk...</div>';
+    
+    try {
+        const resServ = await fetch('/api/services');
+        
+        // Cek jika response server tidak 200
+        if (!resServ.ok) {
+            throw new Error(`Server Vercel Error: ${resServ.status}`);
+        }
+
+        const dataServ = await resServ.json();
+
+        if (dataServ.status && Array.isArray(dataServ.data)) {
+            allServices = dataServ.data;
+            render(allServices);
+            console.log(`Berhasil memuat ${allServices.length} layanan.`);
+        } else {
+            grid.innerHTML = `<div class="error-msg">❌ Gagal: ${dataServ.message || "Data Kosong"}</div>`;
+            console.error("API Services Error:", dataServ);
+        }
+    } catch (err) {
+        grid.innerHTML = `<div class="error-msg">❌ Gangguan Koneksi: ${err.message}</div>`;
+        console.error("Fetch Services Gagal:", err);
     }
 }
 
-// Fungsi untuk menampilkan produk ke dalam HTML
+// Fungsi Menampilkan Produk ke HTML
 function render(data) {
     const grid = document.getElementById('product-grid');
     
     if (data.length === 0) {
-        grid.innerHTML = '<p class="error-box">Layanan tidak ditemukan.</p>';
+        grid.innerHTML = '<p style="text-align:center">Layanan tidak ditemukan.</p>';
         return;
     }
 
-    grid.innerHTML = data.map(item => `
+    // Menggunakan fragment agar render ribuan data lebih cepat & tidak lag
+    const html = data.map(item => `
         <div class="glass-card card">
-            <div class="card-header">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                 <span class="tag">${item.category}</span>
-                <span class="id-service">ID: ${item.id}</span>
+                <span style="font-size:10px; opacity:0.5;">ID: ${item.id}</span>
             </div>
-            <h4>${item.service}</h4>
-            <div class="card-footer">
-                <p class="price">Rp ${parseInt(item.price).toLocaleString('id-ID')}</p>
-                <button class="btn-buy" onclick="pesanLayanan('${item.id}', '${item.service}')">Pesan</button>
+            <h4 style="font-size:14px; margin:10px 0;">${item.service}</h4>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px;">
+                <p class="price" style="font-weight:bold; color:#0ea5e9;">Rp ${parseInt(item.price).toLocaleString('id-ID')}</p>
+                <button class="btn-buy" style="padding:5px 15px; border-radius:8px; cursor:pointer;" onclick="order('${item.id}')">Beli</button>
             </div>
         </div>
     `).join('');
+    
+    grid.innerHTML = html;
 }
 
-// Fungsi Pencarian (Search) Otomatis
+// Fungsi Search
 function search() {
-    const keyword = document.getElementById('searchInput').value.toLowerCase();
+    const input = document.getElementById('searchInput').value.toLowerCase();
     const filtered = allServices.filter(item => 
-        item.service.toLowerCase().includes(keyword) || 
-        item.category.toLowerCase().includes(keyword)
+        item.service.toLowerCase().includes(input) || 
+        item.category.toLowerCase().includes(input)
     );
     render(filtered);
 }
 
-// Fungsi Placeholder untuk Tombol Pesan
-function pesanLayanan(id, name) {
-    alert(`Layanan: ${name}\nID: ${id}\n\nFitur pemesanan langsung sedang disinkronkan dengan saldo SawargiPay Anda!`);
+// Fungsi Klik Beli
+function order(id) {
+    alert("Proses Pemesanan ID: " + id + "\nFitur ini sedang dikoneksikan ke Database SawargiPay!");
 }
 
-// Jalankan saat halaman dibuka
+// Jalankan otomatis
 window.onload = loadDashboard;
