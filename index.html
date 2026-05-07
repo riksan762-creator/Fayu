@@ -3,40 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SawargiPay - Digital Marketplace Professional</title>
-    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>SawargiPay - Panel Sosial Media Profesional</title>
+    <!-- Font & Ikon Modern -->
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="glow-overlay"></div>
+    <!-- Background Gradient Efek -->
+    <div class="bg-glow"></div>
 
     <header>
-        <div class="container nav-container">
+        <div class="container nav-wrapper">
             <div class="logo">Sawargi<span>Pay</span></div>
-            <div class="balance-box">
-                <i class="fa-solid fa-wallet"></i>
-                <span id="balance-text">Rp 0</span>
+            <div class="user-stats">
+                <div class="balance-card">
+                    <i class="fa-solid fa-wallet"></i>
+                    <span id="balance-val">Rp 0</span>
+                </div>
             </div>
         </div>
     </header>
 
     <main class="container">
-        <section class="hero">
+        <!-- Hero Section -->
+        <section class="hero-section">
             <h1>Layanan Sosial Media <span>Terbaik</span></h1>
-            <p>Tingkatkan engagement akun Anda dengan layanan profesional, instan, dan bergaransi.</p>
+            <p>Tingkatkan kehadiran digital Anda dengan layanan instan, bergaransi, dan termurah.</p>
         </section>
 
-        <div class="search-wrapper">
-            <div class="search-bar">
+        <!-- Search & Filter -->
+        <div class="search-container">
+            <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" placeholder="Cari layanan (Contoh: Instagram, TikTok)..." onkeyup="search()">
+                <input type="text" id="searchInput" placeholder="Cari layanan (Contoh: Instagram, TikTok, YouTube)..." onkeyup="searchService()">
             </div>
         </div>
 
+        <!-- Product Grid - Lokasi Utama Produk -->
         <div id="product-grid" class="product-grid">
-            </div>
+            <!-- Produk akan dimuat secara otomatis oleh script.js -->
+        </div>
     </main>
+
+    <footer>
+        <p>&copy; 2026 SawargiPay. All Rights Reserved.</p>
+    </footer>
 
     <script src="script.js"></script>
 </body>
