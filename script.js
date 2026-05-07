@@ -1,34 +1,27 @@
 let allServices = [];
 
 async function loadDashboard() {
-    const grid = document.getElementById('product-grid');
     const balanceText = document.getElementById('balance-text');
+    const grid = document.getElementById('product-grid');
 
-    // Load Saldo secara mandiri
-    fetch('/api/balance')
-        .then(res => res.json())
-        .then(data => {
-            if(data.status) {
-                balanceText.innerText = `Rp ${parseInt(data.data.balance).toLocaleString('id-ID')}`;
-            } else { balanceText.innerText = "Error Saldo"; }
-        }).catch(() => balanceText.innerText = "Offline");
+    // 1. Ambil Saldo
+    try {
+        const res = await fetch('/api/balance');
+        const d = await res.json();
+        balanceText.innerText = d.status ? `Rp ${parseInt(d.balance).toLocaleString('id-ID')}` : "Rp 0";
+    } catch { balanceText.innerText = "Error"; }
 
-    // Load Produk
-    grid.innerHTML = '<div class="loading">Menghubungkan ke SawargiPay...</div>';
-    
+    // 2. Ambil Produk
     try {
         const res = await fetch('/api/services');
         const result = await res.json();
-
-        if (result.status) {
+        if(result.status && result.data) {
             allServices = result.data;
             render(allServices);
         } else {
-            grid.innerHTML = `<div class="error-card">⚠️ ${result.message}</div>`;
+            grid.innerHTML = `<p style="color:white; text-align:center;">${result.message || "Data belum tersedia"}</p>`;
         }
-    } catch (e) {
-        grid.innerHTML = `<div class="error-card">❌ Gagal terhubung ke API Vercel</div>`;
-    }
+    } catch { grid.innerHTML = "Gagal koneksi backend"; }
 }
 
 function render(data) {
@@ -36,19 +29,18 @@ function render(data) {
     grid.innerHTML = data.map(item => `
         <div class="glass-card card">
             <span class="tag">${item.category}</span>
-            <h4>${item.service}</h4>
-            <div class="price-row">
-                <p class="price">Rp ${item.price.toLocaleString('id-ID')}</p>
-                <button class="btn-buy" onclick="alert('Layanan ID ${item.id} Siap Dipesan!')">Beli</button>
+            <h4 style="margin:10px 0; font-size:14px;">${item.service}</h4>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <b style="color:#0ea5e9;">Rp ${item.price.toLocaleString('id-ID')}</b>
+                <button class="btn-buy" style="padding:4px 10px; cursor:pointer;">Beli</button>
             </div>
         </div>
     `).join('');
 }
 
 function search() {
-    const input = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = allServices.filter(i => i.service.toLowerCase().includes(input));
-    render(filtered);
+    const val = document.getElementById('searchInput').value.toLowerCase();
+    render(allServices.filter(s => s.service.toLowerCase().includes(val)));
 }
 
 window.onload = loadDashboard;
