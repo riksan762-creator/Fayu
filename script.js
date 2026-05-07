@@ -1,36 +1,42 @@
+/* =============================================
+   SAWARGI PAY — script.js
+   Auto order ke API, modal, filter, search
+   ============================================= */
+
 let allServices = [];
 let activeCategory = 'Semua';
-let isLoading = false;
+let currentOrder = {};
 
 // =============================================
-// INISIALISASI APLIKASI
+// INIT
 // =============================================
 async function initApp() {
-    showLoadingState();
-
+    showLoading();
     try {
-        const response = await fetch(`/api/services?t=${Date.now()}`);
-        const result = await response.json();
+        const res = await fetch(`/api/services?t=${Date.now()}`);
+        const result = await res.json();
 
-        if (result.status && result.data) {
+        if (result.status && Array.isArray(result.data) && result.data.length > 0) {
             allServices = result.data;
             buildCategoryTabs(allServices);
             renderProducts(allServices);
             updateCounter(allServices.length);
+
+            const totalEl = document.getElementById('stat-total');
+            if (totalEl) totalEl.textContent = allServices.length.toLocaleString('id-ID');
         } else {
-            showError(result.message || 'Data tidak tersedia.');
+            showError(result.message || 'Produk tidak tersedia saat ini.');
         }
-    } catch (error) {
-        showError('Gagal terhubung ke server. Coba refresh halaman.');
+    } catch (err) {
+        showError('Gagal terhubung ke server. Periksa koneksi internet kamu.');
     }
 }
 
 // =============================================
-// LOADING & ERROR STATE
+// LOADING & ERROR
 // =============================================
-function showLoadingState() {
-    const grid = document.getElementById('product-grid');
-    grid.innerHTML = `
+function showLoading() {
+    document.getElementById('product-grid').innerHTML = `
         <div class="loading-state">
             <div class="spinner"></div>
             <p>Memuat layanan...</p>
@@ -39,11 +45,10 @@ function showLoadingState() {
 }
 
 function showError(msg) {
-    const grid = document.getElementById('product-grid');
-    grid.innerHTML = `
+    document.getElementById('product-grid').innerHTML = `
         <div class="empty-state">
             <div class="empty-icon">⚠️</div>
-            <h3>Oops!</h3>
+            <h3>Gagal Memuat</h3>
             <p>${msg}</p>
             <button class="btn-retry" onclick="initApp()">Coba Lagi</button>
         </div>
@@ -51,73 +56,74 @@ function showError(msg) {
 }
 
 // =============================================
-// CATEGORY TABS (auto-generate dari data)
+// CATEGORY TABS
 // =============================================
 function buildCategoryTabs(data) {
-    const categories = ['Semua', ...new Set(data.map(s => s.category))];
-    const tabsContainer = document.getElementById('category-tabs');
-    if (!tabsContainer) return;
+    const tabsEl = document.getElementById('category-tabs');
+    if (!tabsEl) return;
 
-    tabsContainer.innerHTML = categories.map(cat => `
-        <button 
-            class="cat-tab ${cat === 'Semua' ? 'active' : ''}" 
+    const categories = ['Semua', ...new Set(data.map(s => s.category).filter(Boolean))];
+
+    tabsEl.innerHTML = categories.map(cat => `
+        <button class="cat-tab ${cat === 'Semua' ? 'active' : ''}"
             onclick="filterByCategory('${cat}')"
             data-cat="${cat}">
-            ${getCategoryIcon(cat)} ${cat}
+            ${getCatIcon(cat)} ${cat}
         </button>
     `).join('');
 }
 
-function getCategoryIcon(category) {
-    const icons = {
-        'Semua': '🌐',
-        'Instagram': '📸',
-        'TikTok': '🎵',
-        'Facebook': '👥',
-        'YouTube': '▶️',
-        'Twitter': '🐦',
-        'Telegram': '✈️',
-        'Spotify': '🎧',
-        'Google': '🔍',
+function getCatIcon(cat) {
+    const map = {
+        instagram: '📸', tiktok: '🎵', facebook: '👥',
+        youtube: '▶️', twitter: '🐦', telegram: '✈️',
+        spotify: '🎧', google: '🔍', twitter_x: '𝕏',
+        semua: '🌐', discord: '💬', linkedin: '💼',
+        threads: '🧵', snapchat: '👻',
     };
-    // cek partial match
-    for (const [key, icon] of Object.entries(icons)) {
-        if (category.toLowerCase().includes(key.toLowerCase())) return icon;
+    const key = cat.toLowerCase().replace(/\s+/g, '_');
+    for (const [k, v] of Object.entries(map)) {
+        if (key.includes(k)) return v;
     }
     return '⚡';
 }
 
 function filterByCategory(cat) {
     activeCategory = cat;
-
-    // Update active tab
     document.querySelectorAll('.cat-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.cat === cat);
     });
-
-    const query = document.getElementById('searchInput')?.value.toLowerCase() || '';
-    applyFilters(cat, query);
+    applyFilters();
 }
 
 // =============================================
-// PENCARIAN
+// SEARCH
 // =============================================
 function searchService() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    applyFilters(activeCategory, query);
+    const input = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('searchClear');
+    if (clearBtn) clearBtn.style.display = input.value ? 'flex' : 'none';
+    applyFilters();
 }
 
-function applyFilters(category, query) {
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchClear').style.display = 'none';
+    applyFilters();
+}
+
+function applyFilters() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
     let filtered = allServices;
 
-    if (category !== 'Semua') {
-        filtered = filtered.filter(s => s.category === category);
+    if (activeCategory !== 'Semua') {
+        filtered = filtered.filter(s => s.category === activeCategory);
     }
 
     if (query) {
         filtered = filtered.filter(s =>
-            s.name.toLowerCase().includes(query) ||
-            s.category.toLowerCase().includes(query)
+            (s.name || '').toLowerCase().includes(query) ||
+            (s.category || '').toLowerCase().includes(query)
         );
     }
 
@@ -127,7 +133,7 @@ function applyFilters(category, query) {
 
 function updateCounter(count) {
     const el = document.getElementById('result-count');
-    if (el) el.textContent = `${count} layanan ditemukan`;
+    if (el) el.textContent = `${count.toLocaleString('id-ID')} layanan ditemukan`;
 }
 
 // =============================================
@@ -136,7 +142,7 @@ function updateCounter(count) {
 function renderProducts(data) {
     const grid = document.getElementById('product-grid');
 
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
         grid.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">🔍</div>
@@ -147,28 +153,25 @@ function renderProducts(data) {
         return;
     }
 
-    grid.innerHTML = data.map((item, index) => `
-        <div class="product-card" style="animation-delay:${index * 30}ms">
-            <div class="card-header">
-                <span class="cat-badge">${getCategoryIcon(item.category)} ${item.category}</span>
+    grid.innerHTML = data.map((item, i) => `
+        <div class="product-card" style="animation-delay:${Math.min(i * 25, 400)}ms" onclick="openModal('${item.id}')">
+            <div class="card-top">
+                <span class="cat-badge">${getCatIcon(item.category)} ${item.category}</span>
                 <span class="product-id">#${item.id}</span>
             </div>
-            <div class="card-body">
-                <h3 class="product-name">${item.name}</h3>
-                ${item.description ? `<p class="product-desc">${formatDesc(item.description)}</p>` : ''}
-            </div>
-            <div class="card-meta">
-                ${item.min ? `<span class="meta-item">📦 Min: ${Number(item.min).toLocaleString('id-ID')}</span>` : ''}
-                ${item.max ? `<span class="meta-item">📦 Max: ${Number(item.max).toLocaleString('id-ID')}</span>` : ''}
-                ${item.refill == 1 ? `<span class="meta-item refill">🔄 Refill</span>` : ''}
+            <p class="product-name">${sanitize(item.name)}</p>
+            <div class="product-meta">
+                ${item.min ? `<span class="meta-chip">Min: ${Number(item.min).toLocaleString('id-ID')}</span>` : ''}
+                ${item.max ? `<span class="meta-chip">Max: ${Number(item.max).toLocaleString('id-ID')}</span>` : ''}
+                ${item.refill == 1 ? `<span class="meta-chip refill">🔄 Refill</span>` : ''}
             </div>
             <div class="card-footer">
-                <div class="product-price">
-                    <span class="price-label">Harga</span>
+                <div class="price-wrap">
+                    <span class="price-label">Harga/1000</span>
                     <span class="price-value">Rp ${formatPrice(item.price)}</span>
                 </div>
-                <button class="btn-buy" onclick="handleOrder('${item.id}', \`${escapeForAttr(item.name)}\`, ${item.price})">
-                    <i class="fa-solid fa-cart-shopping"></i> Pesan
+                <button class="btn-order" onclick="event.stopPropagation(); openModal('${item.id}')">
+                    <i class="fa-solid fa-cart-shopping"></i> Order
                 </button>
             </div>
         </div>
@@ -176,51 +179,121 @@ function renderProducts(data) {
 }
 
 // =============================================
-// HELPER FORMAT
+// MODAL ORDER
+// =============================================
+function openModal(serviceId) {
+    const item = allServices.find(s => String(s.id) === String(serviceId));
+    if (!item) return;
+
+    currentOrder = { ...item };
+
+    document.getElementById('modal-title').textContent = item.name;
+    document.getElementById('modal-category').textContent = `${getCatIcon(item.category)} ${item.category}`;
+    document.getElementById('modal-price').textContent = `Rp ${formatPrice(item.price)}`;
+    document.getElementById('modal-min').textContent = Number(item.min || 0).toLocaleString('id-ID');
+    document.getElementById('modal-max').textContent = Number(item.max || 0).toLocaleString('id-ID');
+    document.getElementById('qty-range').textContent = `(${Number(item.min||0).toLocaleString('id-ID')} - ${Number(item.max||0).toLocaleString('id-ID')})`;
+
+    const qtyInput = document.getElementById('order-qty');
+    qtyInput.value = '';
+    qtyInput.min = item.min || 1;
+    qtyInput.max = item.max || 999999;
+
+    document.getElementById('order-link').value = '';
+    document.getElementById('order-total').textContent = 'Rp 0';
+    document.getElementById('order-status').style.display = 'none';
+    document.getElementById('btn-submit').disabled = false;
+    document.getElementById('btn-submit').innerHTML = '<i class="fa-solid fa-paper-plane"></i> Proses Order Sekarang';
+
+    document.getElementById('order-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    document.getElementById('order-modal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function closeModalOutside(e) {
+    if (e.target === document.getElementById('order-modal')) closeModal();
+}
+
+function calcTotal() {
+    const qty = parseInt(document.getElementById('order-qty').value) || 0;
+    const price = parseFloat(currentOrder.price) || 0;
+    const total = (qty / 1000) * price;
+    document.getElementById('order-total').textContent = `Rp ${formatPrice(Math.ceil(total))}`;
+}
+
+// =============================================
+// SUBMIT ORDER KE API
+// =============================================
+async function submitOrder() {
+    const link  = document.getElementById('order-link').value.trim();
+    const qty   = parseInt(document.getElementById('order-qty').value);
+    const min   = parseInt(currentOrder.min) || 1;
+    const max   = parseInt(currentOrder.max) || 999999;
+
+    if (!link) return showStatus('error', '⚠️ Masukkan link atau username target terlebih dahulu.');
+    if (!qty || qty < min) return showStatus('error', `⚠️ Jumlah minimum order adalah ${min.toLocaleString('id-ID')}.`);
+    if (qty > max) return showStatus('error', `⚠️ Jumlah maksimum order adalah ${max.toLocaleString('id-ID')}.`);
+
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Memproses...';
+    showStatus('loading', '⏳ Mengirim order ke sistem...');
+
+    try {
+        const res = await fetch('/api/order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                service: currentOrder.id,
+                link:    link,
+                quantity: qty
+            })
+        });
+
+        const result = await res.json();
+
+        if (result.status || result.order || result.id) {
+            const orderId = result.order || result.id || result.order_id || '—';
+            showStatus('success', `✅ Order berhasil! ID Order: <strong>#${orderId}</strong><br>Pesananmu sedang diproses otomatis.`);
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Order Terkirim!';
+        } else {
+            const errMsg = result.error || result.message || 'Order gagal, coba lagi.';
+            showStatus('error', `❌ ${errMsg}`);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Proses Order Sekarang';
+        }
+    } catch (err) {
+        showStatus('error', '❌ Koneksi gagal. Periksa internet dan coba lagi.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Proses Order Sekarang';
+    }
+}
+
+function showStatus(type, html) {
+    const el = document.getElementById('order-status');
+    el.className = `order-status ${type}`;
+    el.innerHTML = html;
+    el.style.display = 'block';
+}
+
+// =============================================
+// HELPER
 // =============================================
 function formatPrice(price) {
-    const num = parseFloat(price);
-    if (isNaN(num)) return price;
-    return num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const n = parseFloat(price);
+    if (isNaN(n)) return '0';
+    return n.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-function formatDesc(desc) {
-    // Bersihkan "- " list jadi lebih rapi
-    return desc
-        .replace(/\\r\\n/g, '\n')
-        .replace(/\r\n/g, '\n')
-        .split('\n')
-        .filter(line => line.trim())
-        .slice(0, 3) // Max 3 baris
-        .map(line => `<span>${line.trim()}</span>`)
-        .join('');
+function sanitize(str) {
+    return String(str || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function escapeForAttr(str) {
-    return str.replace(/`/g, '\\`').replace(/\$/g, '\\$');
-}
+// Close modal on ESC
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-// =============================================
-// ORDER VIA WHATSAPP
-// =============================================
-function handleOrder(id, name, price) {
-    const adminWA = "628123456789"; // GANTI NOMOR WA ADMIN
-    const priceFormatted = parseFloat(price).toLocaleString('id-ID');
-
-    const text =
-        `Halo Admin SawargiPay! 👋\n\n` +
-        `Saya ingin memesan layanan:\n` +
-        `━━━━━━━━━━━━━━━━━━\n` +
-        `📦 *Layanan:* ${name}\n` +
-        `🆔 *ID Produk:* ${id}\n` +
-        `💵 *Harga:* Rp ${priceFormatted}\n` +
-        `━━━━━━━━━━━━━━━━━━\n\n` +
-        `Mohon info selanjutnya untuk pembayaran. Terima kasih!`;
-
-    window.open(`https://wa.me/${adminWA}?text=${encodeURIComponent(text)}`, '_blank');
-}
-
-// =============================================
-// JALANKAN
-// =============================================
 window.onload = initApp;
